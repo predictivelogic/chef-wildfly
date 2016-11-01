@@ -21,7 +21,8 @@ actions :create, :delete
 default_action :create
 
 attribute :name,          kind_of: String, required: true, name_attribute: true
-attribute :cache_type,    kind_of: String
+attribute :cache_type,    kind_of: String, required: true
+attribute :login_modules, kind_of: Array, required: true
 
 attr_accessor :exists
 

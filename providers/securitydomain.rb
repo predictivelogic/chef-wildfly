@@ -48,6 +48,7 @@ end
 
 def load_current_resource
   @current_resource = Chef::Resource::WildflySecuritydomain.new(@new_resource.name)
+  @current_resource.login_modules(@new_resource.login_modules)
   @current_resource.cache_type(@new_resource.cache_type)
   @current_resource.exists = true if securitydomain_exists?(@current_resource.name)
 end
@@ -60,19 +61,37 @@ end
 private
 
 def create_securitydomain
-  # params = %W(--name=#{new_resource.name} --jndi-name=#{new_resource.jndiname} --driver-name=#{new_resource.drivername} --connection-url=#{new_resource.connectionurl})
-  # params << "--user-name=#{new_resource.username}" if new_resource.username
-  # params << "--password=#{new_resource.password}" if new_resource.password
-
+  # It's a two step process to add a security domain and its login modules
   bash "install_securitydomain #{new_resource.name} (add domain)" do
     user node['wildfly']['user']
     cwd node['wildfly']['base']
     code "bin/jboss-cli.sh -c command=\"/subsystem=security/security-domain=#{new_resource.name}/:add(cache-type=#{new_resource.cache_type})\""
     not_if { securitydomain_exists?(new_resource.name) }
   end
+
+  bash "install_securitydomain #{new_resource.name} (add login modules)" do
+    login_modules_text = "login-modules=["
+    new_resource.login_modules.each do |login_module|
+      login_modules_text << "{"
+      login_modules_text << "\"code\" => \"#{login_module['code']}\","
+      login_modules_text << "\"flag\" => \"#{login_module['flag']}\","
+      login_modules_text << '"module-options" => ['
+      login_modules_text << login_module['module-options'].each.map { |module_option|
+        "\"#{module_option[0]}\" => \"#{module_option[1]}\""
+      }.join(',')
+      login_modules_text << ']}]'
+    end
+
+    user node['wildfly']['user']
+    cwd node['wildfly']['base']
+    code "bin/jboss-cli.sh -c command=\"/subsystem=security/security-domain=#{new_resource.name}/authentication=classic:add(#{login_modules_text})\""
+    only_if { securitydomain_exists?(new_resource.name) }
+  end
 end
 
 def delete_securitydomain
+  # TODO
+  # /subsystem=security/security-domain=pl_domain:remove
   bash "remove_securitydomain #{new_resource.name}" do
     user node['wildfly']['user']
     cwd node['wildfly']['base']
