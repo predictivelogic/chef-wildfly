@@ -90,13 +90,11 @@ def create_securitydomain
 end
 
 def delete_securitydomain
-  # TODO
-  # /subsystem=security/security-domain=pl_domain:remove
   bash "remove_securitydomain #{new_resource.name}" do
     user node['wildfly']['user']
     cwd node['wildfly']['base']
     code <<-EOH
-      bin/jboss-cli.sh -c command="security-domain remove --name=#{new_resource.name}"
+      bin/jboss-cli.sh -c command="/subsystem=security/security-domain=#{new_resource.name}:remove"
     EOH
     only_if { securitydomain_exists?(new_resource.name) }
   end
