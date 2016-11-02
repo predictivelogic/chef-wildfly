@@ -113,7 +113,7 @@ end
 def deploy_install(source, name, runtime_name)
   Chef::Log.info "Deploying #{name}"
   converge_by((source == '' ? 'Enabling' : 'Deploying') + " #{detailed_name(runtime_name, name)}") do
-    result = shell_out("bin/jboss-cli.sh -c ' deploy #{source} --name=#{name} --runtime-name=#{runtime_name}'", user: node['wildfly']['user'], cwd: node['wildfly']['base'])
+    result = shell_out("bin/jboss-cli.sh -c 'deploy #{source}'", user: node['wildfly']['user'], cwd: node['wildfly']['base'])
     result.error! if result.exitstatus != 0
   end
   true
