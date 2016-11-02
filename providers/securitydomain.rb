@@ -70,21 +70,23 @@ def create_securitydomain
   end
 
   bash "install_securitydomain #{new_resource.name} (add login modules)" do
-    login_modules_text = "login-modules=["
-    new_resource.login_modules.each do |login_module|
-      login_modules_text << "{"
-      login_modules_text << "\"code\" => \"#{login_module['code']}\","
-      login_modules_text << "\"flag\" => \"#{login_module['flag']}\","
-      login_modules_text << '"module-options" => ['
-      login_modules_text << login_module['module-options'].each.map { |module_option|
+    login_modules_cfg = "login-modules=["
+    login_modules_cfg << new_resource.login_modules.each.map { |login_module|
+      "{" +
+      "\"code\" => \"#{login_module['code']}\", "+
+      "\"flag\" => \"#{login_module['flag']}\", " +
+      "\"module-options\" => [" +
+      login_module['module-options'].each.map { |module_option|
         "\"#{module_option[0]}\" => \"#{module_option[1]}\""
-      }.join(',')
-      login_modules_text << ']}]'
-    end
+      }.join(',') +
+      ']}'
+    }.join(',')
+    login_modules_cfg << ']'
+    print "*****" + login_modules_cfg
 
     user node['wildfly']['user']
     cwd node['wildfly']['base']
-    code "bin/jboss-cli.sh -c command=\"/subsystem=security/security-domain=#{new_resource.name}/authentication=classic:add(#{login_modules_text})\""
+    code "bin/jboss-cli.sh -c command=\"/subsystem=security/security-domain=#{new_resource.name}/authentication=classic:add(#{login_modules_cfg})\""
     only_if { securitydomain_exists?(new_resource.name) }
   end
 end
