@@ -66,6 +66,27 @@ wildfly_datasource 'example' do
 end
 ```
 
+Security Domain LWRP
+
+Please take special note of the escaping that is required if there are spaces or commas in your
+login module's options (for example if you have an option that is a SQL statement -- ask me how I
+know!).
+
+```ruby
+wildfly_securitydomain 'example-domain' do
+  cache_type "none"
+  login_modules [
+    {
+      "code" => "com.my.special.LoginModule",
+      "flag" => "required",
+      "module-options" => {
+        "option1" => "option1value",
+        "option2" => "\"option 2 value\\, with escapes.\"",
+      }
+    }
+end
+```
+
 Deploy LWRP
 
 Allows you to deploy JARs and WARs via chef
